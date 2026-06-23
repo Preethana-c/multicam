@@ -1,0 +1,9 @@
+{
+  "name": "light-ui",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mqtt": "^5.0.0",
+    "socket.io": "^4.6.1"
+  }
+}

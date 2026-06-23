@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Room Lighting</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #888;
+      letter-spacing: 3px;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    #room {
+      position: relative;
+      border: 2px solid #333;
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h2>Room Lighting Control</h2>
+  <div id="room">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // ── room config ──────────────────────────────────────────
+    const TILE_COLS = 22;
+    const TILE_ROWS = 28;
+    const TILE_SIZE = 28;   // pixels per tile
+
+    const CANVAS_W = TILE_COLS * TILE_SIZE;
+    const CANVAS_H = TILE_ROWS * TILE_SIZE;
+
+    // light positions as [row, col] in tile coordinates
+    const LIGHT_COLS = [2, 7, 11, 15, 19];       // 5 lights horizontal
+    const LIGHT_ROWS = [3, 7, 11, 15, 19, 23, 27]; // 7 lights vertical
+
+    // camera positions [tile_row, tile_col]
+    const CAMERAS = [
+      [0, 0],
+      [0, 21],
+      [27, 0],
+      [27, 21]
+    ];
+
+    // build light state grid — 7 rows x 5 cols
+    const lightStates = [];
+    for (let r = 0; r < LIGHT_ROWS.length; r++) {
+      lightStates[r] = [];
+      for (let c = 0; c < LIGHT_COLS.length; c++) {
+        lightStates[r][c] = false;
+      }
+    }
+
+    // ── canvas setup ─────────────────────────────────────────
+    const canvas = document.getElementById('canvas');
+    canvas.width = CANVAS_W;
+    canvas.height = CANVAS_H;
+    const ctx = canvas.getContext('2d');
+
+    // ── draw functions ───────────────────────────────────────
+    function drawRoom() {
+      // background
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+      // tile grid
+      ctx.strokeStyle = '#555555';
+      ctx.lineWidth = 1;
+      for (let r = 0; r <= TILE_ROWS; r++) {
+      ctx.beginPath();
+      ctx.moveTo(0, r * TILE_SIZE);
+      ctx.lineTo(CANVAS_W, r * TILE_SIZE);
+      ctx.stroke();
+      }
+      for (let c = 0; c <= TILE_COLS; c++) {
+      ctx.beginPath();
+      ctx.moveTo(c * TILE_SIZE, 0);
+      ctx.lineTo(c * TILE_SIZE, CANVAS_H);
+      ctx.stroke();
+      }
+
+      // ceiling tiles (slightly lighter background for tiles)
+      ctx.fillStyle = '#222222';
+      for (let r = 0; r < TILE_ROWS; r++) {
+        for (let c = 0; c < TILE_COLS; c++) {
+          // skip light positions
+          const isLight = LIGHT_ROWS.includes(r) && LIGHT_COLS.includes(c);
+          if (!isLight) {
+            ctx.fillRect(
+              c * TILE_SIZE + 1,
+              r * TILE_SIZE + 1,
+              TILE_SIZE - 2,
+              TILE_SIZE - 2
+            );
+          }
+        }
+      }
+
+      // lights
+      for (let ri = 0; ri < LIGHT_ROWS.length; ri++) {
+        for (let ci = 0; ci < LIGHT_COLS.length; ci++) {
+          const tileR = LIGHT_ROWS[ri];
+          const tileC = LIGHT_COLS[ci];
+          const on = lightStates[ri][ci];
+
+          const x = tileC * TILE_SIZE;
+          const y = tileR * TILE_SIZE;
+          const pad = 3;
+
+          if (on) {
+            // glow effect
+            const gradient = ctx.createRadialGradient(
+              x + TILE_SIZE/2, y + TILE_SIZE/2, 0,
+              x + TILE_SIZE/2, y + TILE_SIZE/2, TILE_SIZE * 1.5
+            );
+            gradient.addColorStop(0, 'rgba(255, 240, 100, 0.3)');
+            gradient.addColorStop(1, 'rgba(255, 240, 100, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(
+              x - TILE_SIZE, y - TILE_SIZE,
+              TILE_SIZE * 3, TILE_SIZE * 3
+            );
+
+            // light square — bright yellow
+            ctx.fillStyle = '#ffe844';
+            ctx.shadowColor = '#ffe844';
+            ctx.shadowBlur = 15;
+            ctx.fillRect(x + pad, y + pad, TILE_SIZE - pad*2, TILE_SIZE - pad*2);
+            ctx.shadowBlur = 0;
+          } else {
+            // light square — dim
+            ctx.fillStyle = '#2a2a00';
+            ctx.fillRect(x + pad, y + pad, TILE_SIZE - pad*2, TILE_SIZE - pad*2);
+          }
+        }
+      }
+
+      // cameras
+      for (const [cr, cc] of CAMERAS) {
+        const x = cc * TILE_SIZE + TILE_SIZE / 2;
+        const y = cr * TILE_SIZE + TILE_SIZE / 2;
+        ctx.beginPath();
+        ctx.arc(x, y, TILE_SIZE / 2 - 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#4488ff';
+        ctx.fill();
+        ctx.strokeStyle = '#88aaff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+    }
+
+    // initial draw
+    drawRoom();
+
+    // ── socket.io ────────────────────────────────────────────
+    const socket = io();
+
+    socket.on('light_update', ({ row, col, state }) => {
+      lightStates[row][col] = state;
+      drawRoom();
+    });
+  </script>
+</body>
+</html>
