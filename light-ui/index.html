@@ -1,67 +1,213 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Room Lighting</title>
+  <title>Smart Lighting Control</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #0a0a0a;
+      background: #2a3a50;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 30px;
-      font-family: Arial, sans-serif;
-      color: white;
+      padding: 24px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #ccc;
+      min-height: 100vh;
     }
 
-    h2 {
-      margin-bottom: 20px;
-      color: #888;
+    .header {
+      width: 100%;
+      max-width: 750px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #4a6a8a;
+    }
+
+    .header h1 {
+      font-size: 13px;
+      font-weight: 600;
       letter-spacing: 3px;
-      font-size: 14px;
       text-transform: uppercase;
+      color: #8aaabb;
     }
 
-    #room {
+    .status {
+      font-size: 11px;
+      color: #5a7a9a;
+      letter-spacing: 1px;
+    }
+
+    .status.on { color: #ffe844; }
+
+    #building {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #4a6a8a;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+      border-radius: 4px;
+    }
+
+    .wall-label {
+      background: #1e2e42;
+      text-align: center;
+      font-size: 9px;
+      letter-spacing: 4px;
+      color: #5a7a9a;
+      padding: 5px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #4a6a8a;
+    }
+
+    canvas { display: block; }
+
+    .rooms {
+      display: flex;
+      height: 88px;
+      border-top: 2px solid #4a6a8a;
+    }
+
+    .room {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       position: relative;
-      border: 2px solid #333;
+      border-right: 1px solid #4a6a8a;
+      background: #1e2e42;
+      overflow: hidden;
+      cursor: default;
     }
 
-    canvas {
-      display: block;
+    .room:last-child { border-right: none; }
+
+    .room::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(120,180,255,0.4), transparent);
     }
+
+    .room::after {
+      content: '';
+      position: absolute;
+      top: 10px; left: 14px; right: 14px; bottom: 10px;
+      border: 1px solid rgba(120,180,255,0.15);
+      border-radius: 2px;
+      background: rgba(120,180,255,0.04);
+    }
+
+    .room-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #6a8aaa;
+      z-index: 1;
+    }
+
+    .room-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      margin-top: 6px;
+      z-index: 1;
+    }
+
+    .room-1 .room-dot { background: #2a7a4a; box-shadow: 0 0 8px #2a7a4a; }
+    .room-2 .room-dot { background: #2a4a8a; box-shadow: 0 0 8px #2a4a8a; }
+    .room-3 .room-dot { background: #7a2a4a; box-shadow: 0 0 8px #7a2a4a; }
+
+    .entrance {
+      width: 110px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #182030;
+      border-left: 1px solid #4a6a8a;
+    }
+
+    .entrance-label {
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #5a7a9a;
+    }
+
+    .entrance-arrow {
+      font-size: 18px;
+      color: #4a6a8a;
+      margin-top: 4px;
+    }
+
+    .info-bar {
+      width: 100%;
+      max-width: 750px;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      font-size: 10px;
+      color: #5a7a9a;
+      letter-spacing: 1px;
+    }
+
+    .info-bar span.highlight { color: #ffe844; }
   </style>
 </head>
 <body>
-  <h2>Room Lighting Control</h2>
-  <div id="room">
+
+  <div class="header">
+    <h1>Smart Lighting Control</h1>
+    <div class="status" id="statusText">● ALL OFF</div>
+  </div>
+
+  <div id="building">
+    <div class="wall-label">— north wall —</div>
     <canvas id="canvas"></canvas>
+    <div class="rooms">
+      <div class="room room-1">
+        <div class="room-label">Cabin 01</div>
+        <div class="room-dot"></div>
+      </div>
+      <div class="room room-2">
+        <div class="room-label">Cabin 02</div>
+        <div class="room-dot"></div>
+      </div>
+      <div class="room room-3">
+        <div class="room-label">Cabin 03</div>
+        <div class="room-dot"></div>
+      </div>
+      <div class="entrance">
+        <div class="entrance-label">Entrance</div>
+        <div class="entrance-arrow">↓</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-bar">
+    <span>35 LIGHTS · 4 CAMERAS · 22×28 GRID</span>
+    <span id="activeCount">0 ACTIVE</span>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // ── room config ──────────────────────────────────────────
     const TILE_COLS = 22;
     const TILE_ROWS = 28;
-    const TILE_SIZE = 28;   // pixels per tile
+    const TILE_SIZE = 28;
 
     const CANVAS_W = TILE_COLS * TILE_SIZE;
     const CANVAS_H = TILE_ROWS * TILE_SIZE;
 
-    // light positions as [row, col] in tile coordinates
-    const LIGHT_COLS = [2, 7, 11, 15, 19];       // 5 lights horizontal
-    const LIGHT_ROWS = [3, 7, 11, 15, 19, 23, 27]; // 7 lights vertical
+    const LIGHT_COLS = [2, 7, 11, 15, 19];
+    const LIGHT_ROWS = [3, 7, 11, 15, 19, 23, 27];
+    const CAMERAS = [[0,0],[0,21],[27,0],[27,21]];
 
-    // camera positions [tile_row, tile_col]
-    const CAMERAS = [
-      [0, 0],
-      [0, 21],
-      [27, 0],
-      [27, 21]
-    ];
-
-    // build light state grid — 7 rows x 5 cols
     const lightStates = [];
     for (let r = 0; r < LIGHT_ROWS.length; r++) {
       lightStates[r] = [];
@@ -70,49 +216,71 @@
       }
     }
 
-    // ── canvas setup ─────────────────────────────────────────
     const canvas = document.getElementById('canvas');
     canvas.width = CANVAS_W;
     canvas.height = CANVAS_H;
     const ctx = canvas.getContext('2d');
 
-    // ── draw functions ───────────────────────────────────────
-    function drawRoom() {
-      // background
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-
-      // tile grid
-      ctx.strokeStyle = '#555555';
-      ctx.lineWidth = 1;
-      for (let r = 0; r <= TILE_ROWS; r++) {
-      ctx.beginPath();
-      ctx.moveTo(0, r * TILE_SIZE);
-      ctx.lineTo(CANVAS_W, r * TILE_SIZE);
-      ctx.stroke();
-      }
-      for (let c = 0; c <= TILE_COLS; c++) {
-      ctx.beginPath();
-      ctx.moveTo(c * TILE_SIZE, 0);
-      ctx.lineTo(c * TILE_SIZE, CANVAS_H);
-      ctx.stroke();
-      }
-
-      // ceiling tiles (slightly lighter background for tiles)
-      ctx.fillStyle = '#222222';
-      for (let r = 0; r < TILE_ROWS; r++) {
-        for (let c = 0; c < TILE_COLS; c++) {
-          // skip light positions
-          const isLight = LIGHT_ROWS.includes(r) && LIGHT_COLS.includes(c);
-          if (!isLight) {
-            ctx.fillRect(
-              c * TILE_SIZE + 1,
-              r * TILE_SIZE + 1,
-              TILE_SIZE - 2,
-              TILE_SIZE - 2
-            );
+    function nearestLight(tileR, tileC) {
+      let bestRi = 0, bestCi = 0, bestDist = Infinity;
+      for (let ri = 0; ri < LIGHT_ROWS.length; ri++) {
+        for (let ci = 0; ci < LIGHT_COLS.length; ci++) {
+          const dr = tileR - LIGHT_ROWS[ri];
+          const dc = tileC - LIGHT_COLS[ci];
+          const dist = dr*dr + dc*dc;
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestRi = ri;
+            bestCi = ci;
           }
         }
+      }
+      return [bestRi, bestCi];
+    }
+
+    const zoneColors = [
+      '#3e5570', '#3c5268', '#405870', '#3d546e',
+      '#3f566f', '#3b516a', '#415970', '#3e546e',
+      '#3c536c', '#405770', '#3d526e', '#3f5870',
+      '#3b546a', '#41566f', '#3e526c', '#3c5770',
+      '#405470', '#3d5870', '#3f526e', '#3b566a',
+      '#41576f', '#3e506c', '#3c5670', '#405370',
+      '#3d546e', '#3f576f', '#3b526a', '#415870',
+      '#3e546c', '#3c5070', '#405670', '#3d5270',
+      '#3f546f', '#3b5770', '#415068'
+    ];
+
+    function drawRoom() {
+      ctx.fillStyle = '#3a5068';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+      // zone tiles
+      for (let r = 0; r < TILE_ROWS; r++) {
+        for (let c = 0; c < TILE_COLS; c++) {
+          const [ri, ci] = nearestLight(r, c);
+          const zoneIndex = ri * LIGHT_COLS.length + ci;
+          const isLightTile = LIGHT_ROWS.includes(r) && LIGHT_COLS.includes(c);
+          if (!isLightTile) {
+            ctx.fillStyle = zoneColors[zoneIndex % zoneColors.length];
+            ctx.fillRect(c*TILE_SIZE+1, r*TILE_SIZE+1, TILE_SIZE-2, TILE_SIZE-2);
+          }
+        }
+      }
+
+      // grid lines — bright and clear
+      ctx.strokeStyle = '#5a7a9a';
+      ctx.lineWidth = 1;
+      for (let r = 0; r <= TILE_ROWS; r++) {
+        ctx.beginPath();
+        ctx.moveTo(0, r*TILE_SIZE);
+        ctx.lineTo(CANVAS_W, r*TILE_SIZE);
+        ctx.stroke();
+      }
+      for (let c = 0; c <= TILE_COLS; c++) {
+        ctx.beginPath();
+        ctx.moveTo(c*TILE_SIZE, 0);
+        ctx.lineTo(c*TILE_SIZE, CANVAS_H);
+        ctx.stroke();
       }
 
       // lights
@@ -121,59 +289,81 @@
           const tileR = LIGHT_ROWS[ri];
           const tileC = LIGHT_COLS[ci];
           const on = lightStates[ri][ci];
-
           const x = tileC * TILE_SIZE;
           const y = tileR * TILE_SIZE;
-          const pad = 3;
+          const pad = 4;
+          const lightNum = ri * LIGHT_COLS.length + ci + 1;
 
           if (on) {
-            // glow effect
-            const gradient = ctx.createRadialGradient(
-              x + TILE_SIZE/2, y + TILE_SIZE/2, 0,
-              x + TILE_SIZE/2, y + TILE_SIZE/2, TILE_SIZE * 1.5
+            const grd = ctx.createRadialGradient(
+              x+TILE_SIZE/2, y+TILE_SIZE/2, 0,
+              x+TILE_SIZE/2, y+TILE_SIZE/2, TILE_SIZE*2.5
             );
-            gradient.addColorStop(0, 'rgba(255, 240, 100, 0.3)');
-            gradient.addColorStop(1, 'rgba(255, 240, 100, 0)');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(
-              x - TILE_SIZE, y - TILE_SIZE,
-              TILE_SIZE * 3, TILE_SIZE * 3
-            );
+            grd.addColorStop(0, 'rgba(255,235,80,0.5)');
+            grd.addColorStop(1, 'rgba(255,235,80,0)');
+            ctx.fillStyle = grd;
+            ctx.fillRect(x-TILE_SIZE*2, y-TILE_SIZE*2, TILE_SIZE*5, TILE_SIZE*5);
 
-            // light square — bright yellow
             ctx.fillStyle = '#ffe844';
             ctx.shadowColor = '#ffe844';
-            ctx.shadowBlur = 15;
-            ctx.fillRect(x + pad, y + pad, TILE_SIZE - pad*2, TILE_SIZE - pad*2);
+            ctx.shadowBlur = 14;
+            ctx.fillRect(x+pad, y+pad, TILE_SIZE-pad*2, TILE_SIZE-pad*2);
             ctx.shadowBlur = 0;
+
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 8px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${lightNum}`, x+TILE_SIZE/2, y+TILE_SIZE/2);
           } else {
-            // light square — dim
-            ctx.fillStyle = '#2a2a00';
-            ctx.fillRect(x + pad, y + pad, TILE_SIZE - pad*2, TILE_SIZE - pad*2);
+            ctx.fillStyle = '#2a3a20';
+            ctx.fillRect(x+pad, y+pad, TILE_SIZE-pad*2, TILE_SIZE-pad*2);
+
+            ctx.fillStyle = '#7a9aaa';
+            ctx.font = '7px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${lightNum}`, x+TILE_SIZE/2, y+TILE_SIZE/2);
           }
         }
       }
 
       // cameras
       for (const [cr, cc] of CAMERAS) {
-        const x = cc * TILE_SIZE + TILE_SIZE / 2;
-        const y = cr * TILE_SIZE + TILE_SIZE / 2;
+        const x = cc*TILE_SIZE + TILE_SIZE/2;
+        const y = cr*TILE_SIZE + TILE_SIZE/2;
         ctx.beginPath();
-        ctx.arc(x, y, TILE_SIZE / 2 - 2, 0, Math.PI * 2);
-        ctx.fillStyle = '#4488ff';
+        ctx.arc(x, y, TILE_SIZE/2-3, 0, Math.PI*2);
+        ctx.fillStyle = '#1a3060';
         ctx.fill();
-        ctx.strokeStyle = '#88aaff';
+        ctx.strokeStyle = '#4488ff';
         ctx.lineWidth = 1.5;
         ctx.stroke();
+        ctx.fillStyle = '#88bbff';
+        ctx.font = 'bold 6px Segoe UI';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('CAM', x, y);
       }
+
+      let activeCount = 0;
+      for (let r = 0; r < LIGHT_ROWS.length; r++)
+        for (let c = 0; c < LIGHT_COLS.length; c++)
+          if (lightStates[r][c]) activeCount++;
+
+      document.getElementById('activeCount').textContent =
+        activeCount > 0 ? `${activeCount} ACTIVE` : '0 ACTIVE';
+      document.getElementById('activeCount').className =
+        activeCount > 0 ? 'highlight' : '';
+      document.getElementById('statusText').textContent =
+        activeCount > 0 ? `● ${activeCount} ON` : '● ALL OFF';
+      document.getElementById('statusText').className =
+        activeCount > 0 ? 'status on' : 'status';
     }
 
-    // initial draw
     drawRoom();
 
-    // ── socket.io ────────────────────────────────────────────
     const socket = io();
-
     socket.on('light_update', ({ row, col, state }) => {
       lightStates[row][col] = state;
       drawRoom();

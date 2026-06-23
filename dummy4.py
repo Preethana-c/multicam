@@ -28,10 +28,14 @@ current_person = 1
 colors = {1: (0, 255, 255), 2: (255, 0, 255), 3: (0, 165, 255), 4: (255, 255, 0)}
 
 def find_nearest_light(tile_c, tile_r):
-    # find closest light row and col
-    nearest_ri = min(range(len(LIGHT_ROWS)), key=lambda i: abs(LIGHT_ROWS[i] - tile_r))
-    nearest_ci = min(range(len(LIGHT_COLS)), key=lambda i: abs(LIGHT_COLS[i] - tile_c))
-    return nearest_ri, nearest_ci
+    best_ri, best_ci, best_dist = 0, 0, float('inf')
+    for ri, lr in enumerate(LIGHT_ROWS):
+        for ci, lc in enumerate(LIGHT_COLS):
+            dist = (tile_r - lr)**2 + (tile_c - lc)**2
+            if dist < best_dist:
+                best_dist = dist
+                best_ri, best_ci = ri, ci
+    return best_ri, best_ci
 
 def draw_map(person_positions):
     canvas = np.zeros((CANVAS_H, CANVAS_W, 3), dtype=np.uint8)
