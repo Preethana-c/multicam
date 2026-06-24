@@ -7,6 +7,8 @@ const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 
+app.use(express.json());
+
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
@@ -25,6 +27,24 @@ mqttClient.on('message', (topic, payload) => {
   const state = payload.toString() === 'ON';
   console.log(`Light (${row},${col}) → ${state ? 'ON' : 'OFF'}`);
   io.emit('light_update', { row, col, state });
+});
+
+let floorClicks = [];
+
+app.post('/click', (req, res) => {
+  const { tile_col, tile_row, label, cam } = req.body;
+  floorClicks.push({ tile_col, tile_row, label, cam });
+  console.log(`floor click: cam=${cam} label=${label} tile=(${tile_col},${tile_row})`);
+  res.json({ ok: true });
+});
+
+app.get('/clicks', (req, res) => {
+  res.json(floorClicks);
+});
+
+app.delete('/clicks', (req, res) => {
+  floorClicks = [];
+  res.json({ ok: true });
 });
 
 server.listen(3000, () => {

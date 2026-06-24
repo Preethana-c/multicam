@@ -35,12 +35,7 @@
       color: #8aaabb;
     }
 
-    .status {
-      font-size: 11px;
-      color: #5a7a9a;
-      letter-spacing: 1px;
-    }
-
+    .status { font-size: 11px; color: #5a7a9a; letter-spacing: 1px; }
     .status.on { color: #ffe844; }
 
     #building {
@@ -103,22 +98,8 @@
       background: rgba(120,180,255,0.04);
     }
 
-    .room-label {
-      font-size: 9px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #6a8aaa;
-      z-index: 1;
-    }
-
-    .room-dot {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      margin-top: 6px;
-      z-index: 1;
-    }
-
+    .room-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: #6a8aaa; z-index: 1; }
+    .room-dot { width: 4px; height: 4px; border-radius: 50%; margin-top: 6px; z-index: 1; }
     .room-1 .room-dot { background: #2a7a4a; box-shadow: 0 0 8px #2a7a4a; }
     .room-2 .room-dot { background: #2a4a8a; box-shadow: 0 0 8px #2a4a8a; }
     .room-3 .room-dot { background: #7a2a4a; box-shadow: 0 0 8px #7a2a4a; }
@@ -133,18 +114,8 @@
       border-left: 1px solid #4a6a8a;
     }
 
-    .entrance-label {
-      font-size: 9px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      color: #5a7a9a;
-    }
-
-    .entrance-arrow {
-      font-size: 18px;
-      color: #4a6a8a;
-      margin-top: 4px;
-    }
+    .entrance-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: #5a7a9a; }
+    .entrance-arrow { font-size: 18px; color: #4a6a8a; margin-top: 4px; }
 
     .info-bar {
       width: 100%;
@@ -254,7 +225,6 @@
       ctx.fillStyle = '#3a5068';
       ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
 
-      // zone tiles
       for (let r = 0; r < TILE_ROWS; r++) {
         for (let c = 0; c < TILE_COLS; c++) {
           const [ri, ci] = nearestLight(r, c);
@@ -267,7 +237,6 @@
         }
       }
 
-      // grid lines — bright and clear
       ctx.strokeStyle = '#5a7a9a';
       ctx.lineWidth = 1;
       for (let r = 0; r <= TILE_ROWS; r++) {
@@ -283,7 +252,6 @@
         ctx.stroke();
       }
 
-      // lights
       for (let ri = 0; ri < LIGHT_ROWS.length; ri++) {
         for (let ci = 0; ci < LIGHT_COLS.length; ci++) {
           const tileR = LIGHT_ROWS[ri];
@@ -303,13 +271,11 @@
             grd.addColorStop(1, 'rgba(255,235,80,0)');
             ctx.fillStyle = grd;
             ctx.fillRect(x-TILE_SIZE*2, y-TILE_SIZE*2, TILE_SIZE*5, TILE_SIZE*5);
-
             ctx.fillStyle = '#ffe844';
             ctx.shadowColor = '#ffe844';
             ctx.shadowBlur = 14;
             ctx.fillRect(x+pad, y+pad, TILE_SIZE-pad*2, TILE_SIZE-pad*2);
             ctx.shadowBlur = 0;
-
             ctx.fillStyle = '#000';
             ctx.font = 'bold 8px Segoe UI';
             ctx.textAlign = 'center';
@@ -318,7 +284,6 @@
           } else {
             ctx.fillStyle = '#2a3a20';
             ctx.fillRect(x+pad, y+pad, TILE_SIZE-pad*2, TILE_SIZE-pad*2);
-
             ctx.fillStyle = '#7a9aaa';
             ctx.font = '7px Segoe UI';
             ctx.textAlign = 'center';
@@ -328,7 +293,6 @@
         }
       }
 
-      // cameras
       for (const [cr, cc] of CAMERAS) {
         const x = cc*TILE_SIZE + TILE_SIZE/2;
         const y = cr*TILE_SIZE + TILE_SIZE/2;
@@ -363,6 +327,43 @@
 
     drawRoom();
 
+    // ── floor point collection ──────────────────────────
+    const params = new URLSearchParams(window.location.search);
+    const currentCam = params.get('cam') || null;
+
+    if (currentCam) {
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const tile_col = Math.floor((e.clientX - rect.left) / TILE_SIZE);
+        const tile_row = Math.floor((e.clientY - rect.top) / TILE_SIZE);
+
+        const label = prompt(`tile (${tile_col}, ${tile_row}) — label?`);
+        if (!label) return;
+
+        fetch('/click', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ label, cam: currentCam, tile_col, tile_row })
+        });
+
+        const px = tile_col * TILE_SIZE + TILE_SIZE / 2;
+        const py = tile_row * TILE_SIZE + TILE_SIZE / 2;
+        const s = 6;
+        ctx.strokeStyle = '#ff4444';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(px-s, py-s); ctx.lineTo(px+s, py+s);
+        ctx.moveTo(px+s, py-s); ctx.lineTo(px-s, py+s);
+        ctx.stroke();
+        ctx.fillStyle = '#ff4444';
+        ctx.font = 'bold 9px Segoe UI';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, px, py - 14);
+      });
+    }
+
+    // ── socket for live light updates ───────────────────
     const socket = io();
     socket.on('light_update', ({ row, col, state }) => {
       lightStates[row][col] = state;
