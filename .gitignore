@@ -13,3 +13,7 @@ camera_map.py
 camera_marking.py
 detection.py
 light-ui/homography.py
+detection_2.py
+detection_3.py
+detection_4.py
+old_detection.py
