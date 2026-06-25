@@ -18,23 +18,9 @@ const mqttClient = mqtt.connect('mqtt://localhost:1883');
 mqttClient.on('connect', () => {
   console.log('Connected to Mosquitto');
   mqttClient.subscribe('lights/#');
-  mqttClient.subscribe('persons/positions');  // ← new
 });
 
 mqttClient.on('message', (topic, payload) => {
-
-  // ── person positions from Python ──────────────────────
-  if (topic === 'persons/positions') {
-    try {
-      const persons = JSON.parse(payload.toString());
-      io.emit('person_update', persons);  // forward to browser
-    } catch (e) {
-      console.error('persons/positions parse error:', e.message);
-    }
-    return;
-  }
-
-  // ── light updates ─────────────────────────────────────
   const parts = topic.split('/');
   const row = parseInt(parts[1]);
   const col = parseInt(parts[2]);

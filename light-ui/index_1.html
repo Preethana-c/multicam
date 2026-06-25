@@ -129,22 +129,13 @@
     }
 
     .info-bar span.highlight { color: #ffe844; }
-
-    .person-count {
-      font-size: 10px;
-      color: #ff8080;
-      letter-spacing: 1px;
-    }
   </style>
 </head>
 <body>
 
   <div class="header">
     <h1>Smart Lighting Control</h1>
-    <div style="display:flex; gap:16px; align-items:center;">
-      <span class="person-count" id="personCount">● 0 PERSONS</span>
-      <div class="status" id="statusText">● ALL OFF</div>
-    </div>
+    <div class="status" id="statusText">● ALL OFF</div>
   </div>
 
   <div id="building">
@@ -195,9 +186,6 @@
         lightStates[r][c] = false;
       }
     }
-
-    // ── person positions ──────────────────────────────────
-    let personPositions = [];  // [{tile_col, tile_row, cam}, ...]
 
     const canvas = document.getElementById('canvas');
     canvas.width = CANVAS_W;
@@ -322,33 +310,6 @@
         ctx.fillText('CAM', x, y);
       }
 
-      // ── draw person dots ──────────────────────────────
-      for (const p of personPositions) {
-        const x = p.tile_col * TILE_SIZE + TILE_SIZE / 2;
-        const y = p.tile_row * TILE_SIZE + TILE_SIZE / 2;
-
-        // glow ring
-        ctx.beginPath();
-        ctx.arc(x, y, 9, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 80, 80, 0.2)';
-        ctx.fill();
-
-        // solid dot
-        ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = '#ff5050';
-        ctx.shadowColor = '#ff5050';
-        ctx.shadowBlur = 10;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        // white border
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      }
-
-      // ── update counts ─────────────────────────────────
       let activeCount = 0;
       for (let r = 0; r < LIGHT_ROWS.length; r++)
         for (let c = 0; c < LIGHT_COLS.length; c++)
@@ -362,15 +323,11 @@
         activeCount > 0 ? `● ${activeCount} ON` : '● ALL OFF';
       document.getElementById('statusText').className =
         activeCount > 0 ? 'status on' : 'status';
-
-      const pc = document.getElementById('personCount');
-      pc.textContent = `● ${personPositions.length} PERSON${personPositions.length !== 1 ? 'S' : ''}`;
-      pc.style.color = personPositions.length > 0 ? '#ff8080' : '#5a7a9a';
     }
 
     drawRoom();
 
-    // ── floor point collection ────────────────────────────
+    // ── floor point collection ──────────────────────────
     const params = new URLSearchParams(window.location.search);
     const currentCam = params.get('cam') || null;
 
@@ -406,16 +363,10 @@
       });
     }
 
-    // ── socket for live updates ───────────────────────────
+    // ── socket for live light updates ───────────────────
     const socket = io();
-
     socket.on('light_update', ({ row, col, state }) => {
       lightStates[row][col] = state;
-      drawRoom();
-    });
-
-    socket.on('person_update', (persons) => {
-      personPositions = persons;  // [{tile_col, tile_row, cam}, ...]
       drawRoom();
     });
   </script>
